@@ -1,0 +1,11 @@
+name = "rtx-ai-speech-improver"
+main = "src/worker.ts"
+compatibility_date = "2026-06-05"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[vars]
+APP_BASE_PATH = "/apps/speechimprover/"
