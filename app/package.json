@@ -11,7 +11,10 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "deploy": "npm run build && wrangler deploy",
-    "deploy:cloudflare": "wrangler deploy"
+    "deploy:cloudflare": "npm run db:migrate:remote && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply rtx_ai_speech_improver_db",
+    "db:migrate:remote": "wrangler d1 migrations apply rtx_ai_speech_improver_db --remote",
+    "db:migrate:local": "wrangler d1 migrations apply rtx_ai_speech_improver_db --local"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.1",

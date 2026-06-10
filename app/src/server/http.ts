@@ -1,6 +1,7 @@
 import type { Env } from "./bindings";
+import { addEvalCost, readCostSummary, resetCosts } from "./costStore";
 import { json, methodNotAllowed, notFound } from "./responses";
-import { SPEECH_EVAL_STREAM_TEXT, SPEECH_EVAL_STREAM_VOICE } from "../lib_server_speech_eval";
+import { SPEECH_EVAL_STREAM_TEXT, SPEECH_EVAL_STREAM_VOICE, type SpeechEvalConfig } from "../lib_server_speech_eval";
 import type { TextEvalRequest, VoiceEvalRequest } from "../lib_speech_contract";
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
@@ -18,14 +19,23 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       if (request.method !== "POST") return methodNotAllowed();
       if (!env.OPENAI_API_KEY) return json({ error: "SPEECH_EVAL_STREAM_TEXT is not connected." }, 503);
       const body = await request.json() as TextEvalRequest;
-      return SPEECH_EVAL_STREAM_TEXT({ openAiApiKey: env.OPENAI_API_KEY }, body);
+      return SPEECH_EVAL_STREAM_TEXT(evalConfig(env), body);
     }
 
     if (pathname === "/api/improver/voice-eval-stream") {
       if (request.method !== "POST") return methodNotAllowed();
       if (!env.OPENAI_API_KEY) return json({ error: "SPEECH_EVAL_STREAM_VOICE is not connected." }, 503);
       const body = await request.json() as VoiceEvalRequest;
-      return SPEECH_EVAL_STREAM_VOICE({ openAiApiKey: env.OPENAI_API_KEY }, body);
+      return SPEECH_EVAL_STREAM_VOICE(evalConfig(env), body);
+    }
+
+    if (pathname === "/api/improver/costs") {
+      if (request.method === "GET") return json(await readCostSummary(env.IMPROVER_DB));
+      if (request.method === "DELETE") {
+        await resetCosts(env.IMPROVER_DB);
+        return json(await readCostSummary(env.IMPROVER_DB));
+      }
+      return methodNotAllowed();
     }
 
     if (pathname.startsWith("/api/")) {
@@ -37,6 +47,13 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     const message = error instanceof Error ? error.message : "Unexpected server error";
     return json({ error: message }, 500);
   }
+}
+
+function evalConfig(env: Env): SpeechEvalConfig {
+  return {
+    openAiApiKey: env.OPENAI_API_KEY,
+    onCost: (cost) => addEvalCost(env.IMPROVER_DB, cost.kind, cost.estimatedCost)
+  };
 }
 
 function normalizeBasePath(basePath = "/apps/speechimprover/") {

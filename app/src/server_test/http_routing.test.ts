@@ -71,6 +71,34 @@ test("GET on stream endpoints returns 405", async () => {
   assert.equal(response.status, 405);
 });
 
+test("costs endpoint answers with empty summary without db", async () => {
+  const response = await handleRequest(
+    new Request("http://localhost/api/improver/costs"),
+    makeEnv({ APP_BASE_PATH: "/" })
+  );
+  assert.equal(response.status, 200);
+  const data = await response.json() as { totalEvals: number; totalEstimatedCost: number };
+  assert.equal(data.totalEvals, 0);
+  assert.equal(data.totalEstimatedCost, 0);
+});
+
+test("costs endpoint reads and resets the improver db", async () => {
+  const { openLocalImproverDb } = await import("../server/localDb");
+  const { addEvalCost } = await import("../server/costStore");
+  const db = openLocalImproverDb(":memory:");
+  await addEvalCost(db, "voice_eval", 0.002);
+  const env = makeEnv({ APP_BASE_PATH: "/", IMPROVER_DB: db });
+
+  const read = await handleRequest(new Request("http://localhost/api/improver/costs"), env);
+  const summary = await read.json() as { totalEvals: number; totalEstimatedCost: number };
+  assert.equal(summary.totalEvals, 1);
+  assert.ok(summary.totalEstimatedCost > 0);
+
+  const reset = await handleRequest(new Request("http://localhost/api/improver/costs", { method: "DELETE" }), env);
+  const cleared = await reset.json() as { totalEvals: number };
+  assert.equal(cleared.totalEvals, 0);
+});
+
 test("unknown api route returns 404", async () => {
   const response = await handleRequest(
     new Request("http://localhost/api/unknown"),

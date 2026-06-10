@@ -9,3 +9,8 @@ not_found_handling = "single-page-application"
 
 [vars]
 APP_BASE_PATH = "/apps/speechimprover/"
+
+[[d1_databases]]
+binding = "IMPROVER_DB"
+database_name = "rtx_ai_speech_improver_db"
+database_id = "replace-with-cloudflare-d1-database-id"

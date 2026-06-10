@@ -5,6 +5,7 @@ import { networkInterfaces } from "node:os";
 import { createServer as createViteServer } from "vite";
 import type { Env } from "./server/bindings";
 import { handleRequest } from "./server/http";
+import { openLocalImproverDb } from "./server/localDb";
 
 loadLocalEnv();
 
@@ -24,7 +25,8 @@ const env: Env = {
     fetch: async () => new Response("Assets are served by Vite in local Node dev.", { status: 404 })
   },
   APP_BASE_PATH: "/",
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  IMPROVER_DB: openLocalImproverDb()
 };
 
 const server = http.createServer(async (request, response) => {

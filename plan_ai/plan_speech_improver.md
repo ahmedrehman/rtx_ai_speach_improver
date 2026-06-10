@@ -15,7 +15,7 @@ Entscheidungen:
 ## Architektur (übernommen aus Projekt 1)
 
 - **Streaming-Strategie identisch:** Client POSTet JSON (Audio als Base64), Server antwortet `text/event-stream` mit `data: {json}\n\n`-Events; Client liest `response.body.getReader()` und parst SSE inkrementell.
-- **Server stateless:** Client sendet pro Request das akkumulierte Transkript + Checklisten-Definition mit. Kein D1 (kein DB-Setup nötig; Kosten werden pro Event im SSE-Stream mitgeliefert und im UI summiert).
+- **Server stateless für die Eval:** Client sendet pro Request das akkumulierte Transkript + Checklisten-Definition mit. **Eigene D1-Datenbank** (`rtx_ai_speech_improver_db`, Binding `IMPROVER_DB`) speichert die aggregierten Eval-Kosten serverseitig (`eval_costs`); lokal ersetzt eine SQLite-Datei (`local-data/improver.sqlite`) die D1. Kosten kommen zusätzlich pro Event im SSE-Stream und werden im UI angezeigt (Sitzung + Gesamt).
 - **Lokal + Cloudflare:** `tsx src/localServer.ts` (Node, Vite middlewareMode, lädt `.env.local`) für lokal; `wrangler deploy` mit `[assets]`-Binding für Cloudflare.
 - **Pfad-Flexibilität:** `vite.config.ts` mit `base: VITE_BASE_PATH || (prod ? "/apps/speechimprover/" : "/")`, Worker-Var `APP_BASE_PATH`, SPA-Fallback `not_found_handling = "single-page-application"`.
 

@@ -26,6 +26,7 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [totalCost, setTotalCost] = useState(0);
+  const [storedCost, setStoredCost] = useState<number | null>(null);
 
   const recordingRef = useRef(false);
   const committedTextRef = useRef("");
@@ -40,6 +41,22 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [items]);
+
+  useEffect(() => {
+    void refreshStoredCost();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function refreshStoredCost() {
+    try {
+      const response = await fetch(`${apiBase}api/improver/costs`);
+      if (!response.ok) return;
+      const data = await response.json() as { totalEstimatedCost?: number };
+      if (typeof data.totalEstimatedCost === "number") setStoredCost(data.totalEstimatedCost);
+    } catch {
+      // Cost display is optional; the trainer keeps working without it.
+    }
+  }
 
   useEffect(() => () => {
     recordingRef.current = false;
@@ -91,6 +108,9 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
     }
     if (event.type === "cost") {
       setTotalCost((current) => current + event.estimatedCost);
+    }
+    if (event.type === "done") {
+      void refreshStoredCost();
     }
   }
 
@@ -210,7 +230,9 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
         <span className="toolbar-status">
           {busy ? "Auswertung läuft…" : recording ? "Ich höre zu…" : ""}
         </span>
-        <span className="toolbar-cost">~${totalCost.toFixed(4)}</span>
+        <span className="toolbar-cost">
+          Sitzung ~${totalCost.toFixed(4)}{storedCost !== null ? ` · Gesamt ~$${storedCost.toFixed(4)}` : ""}
+        </span>
       </div>
       {error && <div className="error-banner">{error}</div>}
       <div className="improver-layout">

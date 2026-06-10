@@ -1,6 +1,21 @@
 # Cloudflare Setup
 
-Die App deployt als Cloudflare Worker mit statischen Assets (kein Cloudflare Pages, kein D1).
+Die App deployt als Cloudflare Worker mit statischen Assets und einer eigenen D1-Datenbank
+(kein Cloudflare Pages, nichts mit Projekt 1 geteilt).
+
+## D1-Datenbank (einmalig vor dem ersten Deploy)
+
+```bash
+cd app
+npx wrangler d1 create rtx_ai_speech_improver_db
+```
+
+Die ausgegebene `database_id` in `app/wrangler.toml` eintragen
+(ersetzt `replace-with-cloudflare-d1-database-id`). Migrationen laufen beim Deploy
+automatisch (`npm run deploy:cloudflare` ruft `db:migrate:remote` auf).
+
+Die DB speichert die aggregierten Eval-Kosten (`eval_costs`: pro Art Anzahl + geschätzte
+Kosten). Endpunkte: `GET /api/improver/costs` (Summe), `DELETE /api/improver/costs` (Reset).
 
 ## Worker Builds mit GitHub
 
@@ -51,7 +66,8 @@ und in `wrangler.toml` `APP_BASE_PATH = "/"` setzen. `VITE_BASE_PATH` (Build) un
 ```bash
 cd app
 npm install
-npm run deploy        # build + wrangler deploy
+npm run build
+npm run deploy:cloudflare   # d1 migrations + wrangler deploy
 npx wrangler secret put OPENAI_API_KEY
 ```
 
@@ -64,4 +80,7 @@ npm run dev           # Node-Dev-Server (tsx src/localServer.ts) auf http://127.
 ```
 
 `OPENAI_API_KEY` in `app/.env.local` setzen (siehe `.env.example`).
-Alternativ `npm run dev:worker` für wrangler dev (benötigt vorher `npm run build`).
+Lokal nutzt der Node-Dev-Server eine eigene SQLite-Datei (`app/local-data/improver.sqlite`,
+gitignored) statt D1 — kein Setup nötig.
+Alternativ `npm run dev:worker` für wrangler dev (benötigt vorher `npm run build` und
+`npm run db:migrate:local`).

@@ -24,6 +24,7 @@ export type SpeechEvalConfig = {
   evalModel?: string;
   transcriptionModel?: string;
   logger?: (event: SpeechEvalLogEvent) => void;
+  onCost?: (cost: { kind: "text_eval" | "voice_eval"; estimatedCost: number }) => void | Promise<void>;
 };
 
 export type EvalTextOutput = {
@@ -179,6 +180,7 @@ export function SPEECH_EVAL_STREAM_TEXT(config: SpeechEvalConfig, body: TextEval
         }
         send(checklistUpdateEvent(evalOutput.result));
         send({ type: "cost", estimatedCost: evalOutput.estimatedCost, note: "text eval" });
+        await reportCost(config, "text_eval", evalOutput.estimatedCost);
         send({ type: "done", status: doneStatus("SPEECH_EVAL_STREAM_TEXT", startedAt), fullText: body.fullText.trim() });
       } catch (error) {
         send({ type: "error", status: errorStatus("SPEECH_EVAL_STREAM_TEXT", startedAt, error) });
@@ -206,6 +208,7 @@ export function SPEECH_EVAL_STREAM_VOICE(config: SpeechEvalConfig, body: VoiceEv
         const fullText = joinText(body.transcriptSoFar, transcription.text);
         if (!fullText) {
           send({ type: "cost", estimatedCost: transcription.estimatedCost, note: "transcription only, empty chunk" });
+          await reportCost(config, "voice_eval", transcription.estimatedCost);
           send({ type: "done", status: doneStatus("SPEECH_EVAL_STREAM_VOICE", startedAt), fullText: "" });
           return;
         }
@@ -219,6 +222,7 @@ export function SPEECH_EVAL_STREAM_VOICE(config: SpeechEvalConfig, body: VoiceEv
           estimatedCost: transcription.estimatedCost + evalOutput.estimatedCost,
           note: "transcription + eval"
         });
+        await reportCost(config, "voice_eval", transcription.estimatedCost + evalOutput.estimatedCost);
         send({ type: "done", status: doneStatus("SPEECH_EVAL_STREAM_VOICE", startedAt), fullText });
       } catch (error) {
         send({ type: "error", status: errorStatus("SPEECH_EVAL_STREAM_VOICE", startedAt, error) });
@@ -249,6 +253,14 @@ function sseResponse(stream: ReadableStream<Uint8Array>) {
       "Cache-Control": "no-store"
     }
   });
+}
+
+async function reportCost(config: SpeechEvalConfig, kind: "text_eval" | "voice_eval", estimatedCost: number) {
+  try {
+    await config.onCost?.({ kind, estimatedCost });
+  } catch (error) {
+    log(config, "error", "REPORT_COST", error instanceof Error ? error.message : String(error));
+  }
 }
 
 function joinText(...parts: string[]) {
