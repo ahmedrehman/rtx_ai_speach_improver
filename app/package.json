@@ -12,6 +12,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "deploy": "npm run build && wrangler deploy",
     "deploy:cloudflare": "npm run db:migrate:remote && wrangler deploy",
+    "secrets:push": "node scripts/push-worker-secrets.cjs",
     "db:migrate": "wrangler d1 migrations apply rtx_ai_speech_improver_db",
     "db:migrate:remote": "wrangler d1 migrations apply rtx_ai_speech_improver_db --remote",
     "db:migrate:local": "wrangler d1 migrations apply rtx_ai_speech_improver_db --local"

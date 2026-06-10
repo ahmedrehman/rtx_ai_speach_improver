@@ -3,16 +3,12 @@
 Die App deployt als Cloudflare Worker mit statischen Assets und einer eigenen D1-Datenbank
 (kein Cloudflare Pages, nichts mit Projekt 1 geteilt).
 
-## D1-Datenbank (einmalig vor dem ersten Deploy)
+## D1-Datenbank
 
-```bash
-cd app
-npx wrangler d1 create rtx_ai_speech_improver_db
-```
-
-Die ausgegebene `database_id` in `app/wrangler.toml` eintragen
-(ersetzt `replace-with-cloudflare-d1-database-id`). Migrationen laufen beim Deploy
-automatisch (`npm run deploy:cloudflare` ruft `db:migrate:remote` auf).
+Bereits angelegt: `rtx_ai_speech_improver_db`
+(`database_id = cf16d76a-38b2-4456-8949-4d85502d4d66`, steht in `app/wrangler.toml`).
+Migrationen laufen beim Deploy automatisch (`npm run deploy:cloudflare` ruft
+`db:migrate:remote` auf).
 
 Die DB speichert die aggregierten Eval-Kosten (`eval_costs`: pro Art Anzahl + geschätzte
 Kosten). Endpunkte: `GET /api/improver/costs` (Summe), `DELETE /api/improver/costs` (Reset).
@@ -40,6 +36,13 @@ Einziges Secret (Worker-Secret, nicht Vite-Variable):
 
 ```text
 OPENAI_API_KEY
+```
+
+Setzen per Skript (liest `app/.env.local`, wie in Projekt 1):
+
+```bash
+cd app
+npm run secrets:push
 ```
 
 Runtime-Variable ist bereits in `app/wrangler.toml` gesetzt:

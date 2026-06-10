@@ -13,4 +13,4 @@ APP_BASE_PATH = "/apps/speechimprover/"
 [[d1_databases]]
 binding = "IMPROVER_DB"
 database_name = "rtx_ai_speech_improver_db"
-database_id = "replace-with-cloudflare-d1-database-id"
+database_id = "cf16d76a-38b2-4456-8949-4d85502d4d66"

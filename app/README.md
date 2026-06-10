@@ -53,11 +53,13 @@ Build command: npm run build
 Deploy command: npm run deploy:cloudflare
 ```
 
-Before the first deploy, create the D1 database in Cloudflare and replace
-`replace-with-cloudflare-d1-database-id` in `wrangler.toml`:
+The D1 database `rtx_ai_speech_improver_db` is already created; its id is set in
+`wrangler.toml`. Migrations run automatically on deploy.
+
+Set the Worker secret from `.env.local` with:
 
 ```bash
-npx wrangler d1 create rtx_ai_speech_improver_db
+npm run secrets:push
 ```
 
 Locally no database setup is needed — the Node dev server uses its own SQLite file
