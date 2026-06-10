@@ -76,3 +76,8 @@ The D1 database stores aggregated evaluation costs (`GET /api/improver/costs`,
 `DELETE /api/improver/costs` to reset).
 
 See `../plan_ai/` for the plan, the streaming API contract, and the Cloudflare setup.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0.
+See the [LICENSE](../LICENSE) file for details.

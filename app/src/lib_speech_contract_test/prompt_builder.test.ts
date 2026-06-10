@@ -42,7 +42,7 @@ test("json schema enums match checklist ids", () => {
   const ids = DEFAULT_CHECKLIST.map((field) => field.id);
   assert.deepEqual(schema.properties.fields.items.properties.id.enum, ids);
   assert.deepEqual(schema.properties.next_recommended_id.enum, ids);
-  assert.deepEqual(schema.required, ["fields", "next_recommended_id", "tip_next", "tip_missing", "praise"]);
+  assert.deepEqual(schema.required, ["fields", "next_recommended_id", "tip_next", "tip_missing", "praise", "chat_text"]);
 });
 
 test("empty checklist throws", () => {
@@ -68,7 +68,8 @@ test("normalizeEvalResult always returns one entry per checklist field", () => {
       next_recommended_id: "unknown_id",
       tip_next: "Sag warum.",
       tip_missing: "Warum und Beispiel fehlen.",
-      praise: "Gut angefangen."
+      praise: "Gut angefangen.",
+      chat_text: "Gut angefangen. Sag warum."
     },
     DEFAULT_CHECKLIST
   );
@@ -78,4 +79,5 @@ test("normalizeEvalResult always returns one entry per checklist field", () => {
   assert.ok(!result.fields.some((field) => field.id === "unknown_id"));
   assert.equal(result.nextRecommendedId, "intro", "invalid next id falls back to first open field");
   assert.equal(result.tipNext, "Sag warum.");
+  assert.equal(result.chatText, "Gut angefangen. Sag warum.");
 });

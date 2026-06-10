@@ -12,8 +12,8 @@ type ChatItem = {
 };
 
 const TEXT_DEBOUNCE_MS = 1500;
-const CHUNK_MAX_DURATION_MS = 6000;
-const CHUNK_SILENCE_MS = 1200;
+const CHUNK_MAX_DURATION_MS = 2500;
+const CHUNK_SILENCE_MS = 650;
 
 export function ImproverPage({ settings }: { settings: ImproverSettings }) {
   const language = languageByCode(settings.languageCode);
@@ -100,7 +100,7 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
       setFieldResults(map);
       setNextRecommendedId(event.nextRecommendedId);
       setTipMissing(event.tipMissing);
-      const coachText = [event.praise, event.tipNext].filter(Boolean).join(" ");
+      const coachText = event.chatText || [event.praise, event.tipNext].filter(Boolean).join(" ");
       if (coachText && coachText !== lastCoachTipRef.current) {
         lastCoachTipRef.current = coachText;
         addItem("coach", coachText);

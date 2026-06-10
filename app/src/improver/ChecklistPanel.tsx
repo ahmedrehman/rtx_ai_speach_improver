@@ -1,9 +1,9 @@
 import type { ChecklistFieldDefinition, ChecklistFieldResult } from "../lib_speech_contract";
 
 const STATUS_LABELS: Record<string, string> = {
-  missing: "fehlt",
-  partial: "teilweise",
-  fulfilled: "erfüllt"
+  missing: "rot: fehlt oder falsch",
+  partial: "gelb: verbesserbar",
+  fulfilled: "grün: ok, ausreichend"
 };
 
 export function ChecklistPanel({ checklist, results, nextRecommendedId }: {

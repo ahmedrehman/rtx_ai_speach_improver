@@ -47,3 +47,8 @@ npm run dev
 ```
 
 Open <http://127.0.0.1:5173> — that's it.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0.
+See the [LICENSE](LICENSE) file for details.

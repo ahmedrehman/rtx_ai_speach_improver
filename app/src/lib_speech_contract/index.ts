@@ -27,6 +27,7 @@ export type SpeechEvalResult = {
   tipNext: string;
   tipMissing: string;
   praise: string;
+  chatText: string;
 };
 
 export type TextEvalRequest = {
@@ -59,6 +60,7 @@ export type SpeechEvalStreamEvent =
       tipNext: string;
       tipMissing: string;
       praise: string;
+      chatText: string;
     }
   | { type: "cost"; estimatedCost: number; note: string }
   | { type: "done"; status: MethodStatus; fullText: string }
@@ -104,14 +106,15 @@ export const DEFAULT_PROMPT_TEMPLATE = [
   "Evaluate the explanation against this checklist:",
   "{{CHECKLIST}}",
   "Rules:",
-  "- status \"fulfilled\": the item is clearly covered.",
-  "- status \"partial\": the item is touched but too vague or incomplete.",
-  "- status \"missing\": the item is not covered yet.",
+  "- status \"fulfilled\": green. The item is sufficiently covered / OK.",
+  "- status \"partial\": yellow. The item is present but improvable.",
+  "- status \"missing\": red. The item is missing, unclear, or wrong.",
   "- comment: one short sentence per item in {{LANGUAGE}} (empty string if there is nothing useful to say).",
   "- next_recommended_id: the single checklist id the speaker should work on next.",
   "- tip_next: one short, concrete tip in {{LANGUAGE}} telling the speaker what to add next.",
   "- tip_missing: one short sentence in {{LANGUAGE}} summarizing everything that is still missing.",
   "- praise: one short sentence in {{LANGUAGE}} about what is already good (empty string if nothing yet).",
+  "- chat_text: one short coach message in {{LANGUAGE}} that can be shown directly in the chat. It must combine useful praise and the next concrete instruction.",
   "- Address the user directly and informally.",
   "- Answer only through the JSON schema, nothing else."
 ].join("\n");
@@ -156,9 +159,10 @@ export function buildEvalJsonSchema(checklist: ChecklistFieldDefinition[]) {
       next_recommended_id: { type: "string", enum: ids },
       tip_next: { type: "string" },
       tip_missing: { type: "string" },
-      praise: { type: "string" }
+      praise: { type: "string" },
+      chat_text: { type: "string" }
     },
-    required: ["fields", "next_recommended_id", "tip_next", "tip_missing", "praise"]
+    required: ["fields", "next_recommended_id", "tip_next", "tip_missing", "praise", "chat_text"]
   };
 }
 
@@ -170,6 +174,7 @@ export function normalizeEvalResult(raw: unknown, checklist: ChecklistFieldDefin
     tip_next?: string;
     tip_missing?: string;
     praise?: string;
+    chat_text?: string;
   };
   const byId = new Map<string, ChecklistFieldResult>();
   for (const item of parsed.fields || []) {
@@ -186,12 +191,16 @@ export function normalizeEvalResult(raw: unknown, checklist: ChecklistFieldDefin
   const nextRecommendedId = parsed.next_recommended_id && ids.has(parsed.next_recommended_id)
     ? parsed.next_recommended_id
     : firstOpenId;
+  const praise = String(parsed.praise || "");
+  const tipNext = String(parsed.tip_next || "");
+  const chatText = String(parsed.chat_text || [praise, tipNext].filter(Boolean).join(" "));
   return {
     fields,
     nextRecommendedId,
-    tipNext: String(parsed.tip_next || ""),
+    tipNext,
     tipMissing: String(parsed.tip_missing || ""),
-    praise: String(parsed.praise || "")
+    praise,
+    chatText
   };
 }
 

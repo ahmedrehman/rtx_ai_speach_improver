@@ -241,7 +241,8 @@ function checklistUpdateEvent(result: SpeechEvalResult): SpeechEvalStreamEvent {
     nextRecommendedId: result.nextRecommendedId,
     tipNext: result.tipNext,
     tipMissing: result.tipMissing,
-    praise: result.praise
+    praise: result.praise,
+    chatText: result.chatText
   };
 }
 
