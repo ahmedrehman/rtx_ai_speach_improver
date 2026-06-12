@@ -63,6 +63,23 @@ test("voice eval stream without key returns 503", async () => {
   assert.equal(response.status, 503);
 });
 
+test("audio roundtrip echoes raw audio bytes and content type", async () => {
+  const body = new Uint8Array([1, 2, 3, 4]).buffer;
+  const response = await handleRequest(
+    new Request("http://localhost/api/improver/audio-roundtrip", {
+      method: "POST",
+      headers: { "Content-Type": "audio/webm" },
+      body,
+      duplex: "half"
+    } as RequestInit),
+    makeEnv({ APP_BASE_PATH: "/" })
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Content-Type"), "audio/webm");
+  assert.equal(response.headers.get("X-Audio-Roundtrip-Bytes"), "4");
+  assert.deepEqual(Array.from(new Uint8Array(await response.arrayBuffer())), [1, 2, 3, 4]);
+});
+
 test("GET on stream endpoints returns 405", async () => {
   const response = await handleRequest(
     new Request("http://localhost/api/improver/text-eval-stream"),

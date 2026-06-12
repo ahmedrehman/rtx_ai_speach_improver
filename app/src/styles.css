@@ -545,6 +545,117 @@ button.secondary:hover:not(:disabled) {
   text-align: center;
 }
 
+.audio-debug-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.debug-header,
+.debug-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.debug-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+}
+
+.debug-header h2,
+.debug-panel h3 {
+  margin: 0 0 8px;
+}
+
+.debug-header p,
+.debug-panel p,
+.muted {
+  margin: 0 0 10px;
+  color: var(--text-soft);
+  line-height: 1.45;
+}
+
+.debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.debug-panel {
+  min-width: 0;
+  padding: 14px;
+}
+
+.debug-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.debug-panel input {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 9px 10px;
+}
+
+.debug-panel audio {
+  width: 100%;
+  margin: 2px 0 12px;
+}
+
+.debug-panel pre {
+  max-height: 360px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.meter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.meter-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.meter-dot.active {
+  background: var(--green);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 18%, transparent);
+}
+
 @media (min-width: 760px) {
   .app-header {
     grid-template-columns: 1fr auto auto;
@@ -632,6 +743,14 @@ button.secondary:hover:not(:disabled) {
   }
 
   .checklist-editor-row {
+    grid-template-columns: 1fr;
+  }
+
+  .debug-header {
+    flex-direction: column;
+  }
+
+  .debug-grid {
     grid-template-columns: 1fr;
   }
 }

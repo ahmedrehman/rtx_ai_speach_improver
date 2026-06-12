@@ -29,6 +29,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return SPEECH_EVAL_STREAM_VOICE(evalConfig(env), body);
     }
 
+    if (pathname === "/api/improver/audio-roundtrip") {
+      if (request.method !== "POST") return methodNotAllowed();
+      return audioRoundtrip(request);
+    }
+
     if (pathname === "/api/improver/costs") {
       if (request.method === "GET") return json(await readCostSummary(env.IMPROVER_DB));
       if (request.method === "DELETE") {
@@ -47,6 +52,19 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     const message = error instanceof Error ? error.message : "Unexpected server error";
     return json({ error: message }, 500);
   }
+}
+
+async function audioRoundtrip(request: Request) {
+  const contentType = request.headers.get("Content-Type") || "application/octet-stream";
+  const body = await request.arrayBuffer();
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": contentType,
+      "Cache-Control": "no-store",
+      "X-Audio-Roundtrip-Bytes": String(body.byteLength)
+    }
+  });
 }
 
 function evalConfig(env: Env): SpeechEvalConfig {

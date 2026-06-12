@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { apiBasePath, languageByCode, type ImproverSettings } from "../clientConfig";
-import { AUDIO_BLOB_TO_WAV_BASE64, SYSTEM_MEANINGFUL_AUDIO_CHUNK } from "../lib_client_voice_capture";
 import type { ChecklistFieldResult, SpeechEvalStreamEvent } from "../lib_speech_contract";
 import { ChecklistPanel } from "./ChecklistPanel";
 import { streamEvalRequest } from "./streamClient";
+import { audioFormatFromMimeType, blobToBase64, CAPTURE_VOICE_PACK, OPEN_MICROPHONE } from "./voicePack";
 
 type ChatItem = {
   id: string;
@@ -12,8 +12,10 @@ type ChatItem = {
 };
 
 const TEXT_DEBOUNCE_MS = 1500;
-const CHUNK_MAX_DURATION_MS = 2500;
+const CHUNK_MAX_DURATION_MS = 6000;
 const CHUNK_SILENCE_MS = 650;
+const CHUNK_PREBUFFER_MS = 1000;
+const CHUNK_THRESHOLD = 0.025;
 
 export function ImproverPage({ settings }: { settings: ImproverSettings }) {
   const language = languageByCode(settings.languageCode);
@@ -35,6 +37,7 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
   const lastCoachTipRef = useRef("");
   const debounceRef = useRef<number | undefined>(undefined);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const apiBase = apiBasePath();
 
@@ -150,32 +153,40 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
     recordingRef.current = true;
     setRecording(true);
     setError("");
+    const mic = await OPEN_MICROPHONE();
+    if (!mic.status.ok || !mic.stream) {
+      setError(mic.status.error || "Mikrofon konnte nicht geöffnet werden.");
+      stopRecording();
+      return;
+    }
+    streamRef.current = mic.stream;
     while (recordingRef.current) {
-      const chunk = await SYSTEM_MEANINGFUL_AUDIO_CHUNK({}, {
-        maxDurationMs: CHUNK_MAX_DURATION_MS,
+      const pack = await CAPTURE_VOICE_PACK({
+        stream: mic.stream,
+        threshold: CHUNK_THRESHOLD,
         silenceMs: CHUNK_SILENCE_MS,
-        speechCheckLang: language.recognitionLang
+        preBufferMs: CHUNK_PREBUFFER_MS,
+        maxWaitMs: 8000,
+        maxRecordMs: CHUNK_MAX_DURATION_MS,
+        minVoiceMs: 180,
+        speechRecognitionLang: language.recognitionLang,
+        shouldStop: () => !recordingRef.current
       });
       if (!recordingRef.current) break;
-      if (!chunk.status.ok) {
-        setError(chunk.status.error || "Mikrofonaufnahme fehlgeschlagen.");
+      if (!pack.status.ok) {
+        setError(pack.status.error || "Mikrofonaufnahme fehlgeschlagen.");
         stopRecording();
         break;
       }
-      if (!chunk.audio || chunk.audio.size === 0) continue;
-      const heardSomething = Boolean(chunk.browserSpeechText?.trim())
-        || !chunk.energyCheck.available
-        || chunk.energyCheck.hasSound;
-      if (!heardSomething) continue;
+      if (pack.decision !== "send_voice_segment" || !pack.audio) continue;
       try {
-        const wav = await AUDIO_BLOB_TO_WAV_BASE64(chunk.audio);
         const seq = ++evalSeqRef.current;
         setBusy(true);
         const result = await streamEvalRequest(
           `${apiBase}api/improver/voice-eval-stream`,
           {
-            audioBase64: wav.audioBase64,
-            audioFormat: wav.audioFormat,
+            audioBase64: await blobToBase64(pack.audio),
+            audioFormat: audioFormatFromMimeType(pack.audio.type),
             transcriptSoFar: joinText(committedTextRef.current, draftRef.current),
             languageCode: settings.languageCode,
             checklist: settings.checklist,
@@ -193,10 +204,15 @@ export function ImproverPage({ settings }: { settings: ImproverSettings }) {
         setBusy(false);
       }
     }
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setRecording(false);
   }
 
   function stopRecording() {
     recordingRef.current = false;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
     setRecording(false);
   }
 

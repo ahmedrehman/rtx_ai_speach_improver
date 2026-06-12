@@ -1,17 +1,19 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { ImproverSettings } from "./clientConfig";
+import { AudioRoundtripPage } from "./improver/AudioRoundtripPage";
 import { ConfigPage } from "./improver/ConfigPage";
 import { ImproverPage } from "./improver/ImproverPage";
 import { loadSettings, saveSettings } from "./storage";
 import "./styles.css";
 
-type Page = "improver" | "config";
+type Page = "improver" | "config" | "audio-debug";
 type Theme = "light" | "dark";
 
 const THEME_STORAGE_KEY = "speech-improver-theme";
 
 function pageFromHash(): Page {
+  if (window.location.hash === "#audio-debug") return "audio-debug";
   return window.location.hash === "#config" ? "config" : "improver";
 }
 
@@ -87,13 +89,14 @@ function App() {
         </div>
         <nav id="primary-navigation" className={menuOpen ? "open" : ""}>
           <a href="#" className={page === "improver" ? "active" : ""}>Trainer</a>
+          <a href="#audio-debug" className={page === "audio-debug" ? "active" : ""}>Audio Debug</a>
           <a href="#config" className={page === "config" ? "active" : ""}>Einstellungen</a>
         </nav>
       </header>
       <main>
-        {page === "improver"
-          ? <ImproverPage key={settingsVersion} settings={settings} />
-          : <ConfigPage settings={settings} onSave={handleSave} />}
+        {page === "improver" && <ImproverPage key={settingsVersion} settings={settings} />}
+        {page === "audio-debug" && <AudioRoundtripPage />}
+        {page === "config" && <ConfigPage settings={settings} onSave={handleSave} />}
       </main>
       <footer className="app-footer">
         Licensed under GNU GPL v3.0. Copyright (c) 2026 Ahmed Rehman. See LICENSE for details.
